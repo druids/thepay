@@ -1,17 +1,17 @@
 class Config(object):
 
     # ThePay API
-    gateUrl = 'https://www.thepay.cz/demo-gate/'
-    merchantId = 1
-    accountId = 1
+    gate_url = 'https://www.thepay.cz/demo-gate/'
+    merchant_id = 1
+    account_id = 1
     password = 'my$up3rsecr3tp4$$word'
 
     # Data API
-    dataApiPassword = 'my$up3rsecr3tp4$$word'
-    webServicesWsdl = 'https://www.thepay.cz/demo-gate/api/api-demo.wsdl'
-    dataWebServicesWsdl = 'https://www.thepay.cz/demo-gate/api/data-demo.wsdl'
+    data_api_password = 'my$up3rsecr3tp4$$word'
+    web_services_wsdl = 'https://www.thepay.cz/demo-gate/api/api-demo.wsdl'
+    data_web_services_wsdl = 'https://www.thepay.cz/demo-gate/api/data-demo.wsdl'
 
-    def setCredentials(self, merchantId, accountId, password, dataApiPassword=None):
+    def set_credentials(self, merchantId, accountId, password, data_api_password=None):
         """ Set credentials for production server
 
         :param merchantId:
@@ -19,11 +19,10 @@ class Config(object):
         :param password:
         :param dataApiPassword:
         """
-        self.gateUrl = 'https://www.thepay.cz/gate/'
-        self.webServicesWsdl = 'https://www.thepay.cz/gate/api/api.wsdl'
-        self.dataWebServicesWsdl = 'https://www.thepay.cz/gate/api/data.wsdl'
-        self.merchantId = merchantId
-        self.accountId = accountId
+        self.gate_url = 'https://www.thepay.cz/gate/'
+        self.web_services_wsdl = 'https://www.thepay.cz/gate/api/api.wsdl'
+        self.data_web_services_wsdl = 'https://www.thepay.cz/gate/api/data.wsdl'
+        self.merchant_id = merchantId
+        self.account_id = accountId
         self.password = password
-        self.dataApiPassword = dataApiPassword
-
+        self.data_api_password = data_api_password
