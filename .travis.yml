@@ -1,15 +1,13 @@
 language: python
 python:
   - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
   # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
   # maintainers to fix their pypy-dev package.
-  - "pypy"
 # command to install dependencies
 install:
-  - pip install .
+  - pip install six
+  - pip install pytz
+  - pip install suds
   - pip install coverage
   - pip install coveralls
 # command to run tests

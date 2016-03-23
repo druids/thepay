@@ -1,7 +1,9 @@
 from collections import OrderedDict
 import hashlib
 from six.moves import urllib
+from decimal import Decimal
 from thepay.utils import SignatureMixin
+from thepay.exceptions import InvalidSignature, MissingParameter
 
 
 class Payment(SignatureMixin):
@@ -25,390 +27,143 @@ class Payment(SignatureMixin):
         merchantSpecificSymbol: specific symbol (used only if payment method supports it)
     """
 
+    mapping = OrderedDict((
+        ('value', 'value'),
+        ('currency', 'currency'),
+        ('description', 'description'),
+        ('merchantData', 'merchant_data'),
+        ('customerData', 'customer_data'),
+        ('customerEmail', 'customer_email'),
+        ('returnUrl', 'return_url'),
+        ('methodId', 'method_id'),
+        ('deposit', 'deposit'),
+        ('isRecurring', 'is_recurring'),
+        ('merchantSpecificSymbol', 'merchant_specific_symbol'),
+    ))
+
     def __init__(self, config):
         self.config = config
-        self.data = OrderedDict((
-            ('value', None),
-            ('currency', None),
-            ('description', None),
-            ('merchantData', None),
-            ('customerData', None),
-            ('customerEmail', None),
-            ('returnUrl', None),
-            ('methodId', None),
-            ('deposit', None),
-            ('isRecurring', None),
-            ('merchantSpecificSymbol', None),
-        ))
+        self.value = None
+        self.currency = None
+        self.description = None
+        self.merchant_data = None
+        self.customer_data = None
+        self.customer_email = None
+        self.return_url = None
+        self.method_id = None
+        self.deposit = None
+        self.is_recurring = None
+        self.merchant_specific_symbol = None
 
-    def setValue(self, value):
-        """
-        Sets the value property.
-        """
-        # Only positive numbers allowed.
-        value = float(value)
-
-        if value < 0:
-            raise ValueError('Negative value')
-
-        self.data['value'] = value
-
-    def setCurrency(self, currency):
-        """
-        Sets the currency property.
-        """
-        self.data['currency'] = currency
-
-    def setDescription(self, description):
-        """
-        Sets the description property.
-        """
-        self.data['description'] = description
-
-    def setMerchantData(self, data):
-        """
-        Sets the merchantData property.
-        """
-        self.data['merchantData'] = data
-
-    def setReturnUrl(self, returnUrl):
-        """
-        Sets the returnUrl property.
-        """
-        self.data['returnUrl'] = returnUrl
-
-    def setMethodId(self, methodId):
-        """
-        Sets the methodId property.
-        """
-        self.data['methodId'] = methodId
-
-    def getValue(self):
-        """
-        Returns the value property. If value was not specified using
-        setValue() method, None is returned.
-        """
-        return self.data['value']
-
-    def getCurrency(self):
-        """
-        Returns the currency property. If currency was not specified using
-        setCurrency() method, None is returned.
-        """
-        return self.data['currency']
-
-    def getDescription(self):
-        """
-        Returns the description property. If description was not specified
-        using setDescription() method, None is returned.
-        """
-        return self.data['description']
-
-    def getMerchantData(self):
-        """
-        Returns the merchantData property. If merchantData was not specified
-        using setMerchantData() method, None is returned.
-        """
-        return self.data['merchantData']
-
-    def getReturnUrl(self):
-        """
-        Returns the returnUrl property. If returnUrl was not specified using
-        setReturnUrl() method, None is returned.
-        """
-        return self.data['returnUrl']
-
-    def getMethodId(self):
-        """
-        Returns the methodId property. If methodId was not specified using
-        setMethodId() property, None is returned.
-        """
-        return self.data['methodId']
-
-    def setCustomerData(self, data):
-        """
-        Set customer data.
-        @param mixed data
-        """
-        self.data['customerData'] = data
-
-    def getCustomerData(self):
-        """
-        Get previously set customer data
-        @return mixed
-        """
-        return self.data['customerData']
-
-    def setCustomerEmail(self, customerEmail):
-        """
-        @param customerEmail None|string customerEmail
-        """
-        self.data['customerEmail'] = customerEmail
-
-    def getCustomerEmail(self):
-        """
-        @return None|string
-        """
-        return self.data['customerEmail']
-
-    def getDeposit(self):
-        """
-         If card payment will be charged immediately or only blocked and charged later by paymentDeposit operation.
-        @return boolean
-        """
-        return self.data['deposit']
-
-    def setDeposit(self, deposit):
-        """
-        Set if card payment will be charged immediately or only blocked and charged later by paymentDeposit operation.
-        @param deposit boolean deposit
-        """
-        self.data['deposit'] = deposit
-
-    def getIsRecurring(self):
-        """
-        If card payment is recurring.
-        @return boolean
-        """
-        return self.data['isRecurring']
-
-    def setIsRecurring(self, isRecurring):
-        """
-        Set if card payment is recurring.
-        @param isRecurring boolean isRecurring
-        """
-        self.data['isRecurring'] = isRecurring
-
-    def getMerchantSpecificSymbol(self):
-        """
-        Numerical specific symbol (used only if payment method supports it).
-        @return string
-        """
-        return self.data['merchantSpecificSymbol']
-
-    def setMerchantSpecificSymbol(self, merchantSpecificSymbol):
-        """
-        Numerical specific symbol (used only if payment method supports it).
-        @return string
-        """
-        self.data['merchantSpecificSymbol'] = merchantSpecificSymbol
-
-    def getParams(self):
+    def get_params(self):
         """
         List arguments to put into the URL. Returns associative array of
         arguments that should be contained in the ThePay gate call.
         """
         params = OrderedDict()
 
-        params["merchantId"] = self.config.merchantId
-        params["accountId"] = self.config.accountId
+        params['merchantId'] = self.config.merchant_id
+        params['accountId'] = self.config.account_id
 
-        for key, value in self.data.items():
+        for api_key, attr_name in self.mapping.items():
+            value = getattr(self, attr_name)
             if value is not None:
-                params[key] = value
-
+                params[api_key] = value
         return params
 
-    def _hashParam(self, params):
+    def _hash_param(self, params):
         # this interface is using deprecated md5 hashing
         return hashlib.md5(params).hexdigest()
 
-    def getCreateUrl(self):
+    def get_create_url(self):
         """
         Returns absolute url that creates this payment
 
         :return: url-encoded string
         """
-        params = self._signParams(self.getParams(), self.config.password)
-        return "{}?{}".format(self.config.gateUrl, urllib.parse.urlencode(params))
+        params = self._sign_params(self.get_params(), self.config.password)
+        return "{}?{}".format(self.config.gate_url, urllib.parse.urlencode(params))
 
 
 class ReturnPayment(SignatureMixin):
-    required_data = (
-        "value", "currency", "methodId", "description", "merchantData",
-        "status", "paymentId", "ipRating", "isOffline", "needConfirm"
-    )
+    required_data = OrderedDict((
+        ('value', 'value'),
+        ('currency', 'currency'),
+        ('methodId', 'method_id'),
+        ('description', 'description'),
+        ('merchantData', 'merchant_data'),
+        ('status', 'status'),
+        ('paymentId', 'payment_id'),
+        ('ipRating', 'ip_rating'),
+        ('isOffline', 'is_offline'),
+        ('needConfirm', 'need_confirm'),
+    ))
 
-    optional_data = (
-        "isConfirm", "variableSymbol", "specificSymbol",
-        "deposit", "isRecurring", "customerAccountNumber",
-        "customerAccountName"
-    )
+    optional_data = OrderedDict((
+        ('isConfirm', 'is_confirm'),
+        ('variableSymbol', 'variable_symbol'),
+        ('specificSymbol', 'specific_symbol'),
+        ('deposit', 'deposit'),
+        ('isRecurring', 'is_rcurring'),
+        ('customerAccountNumber', 'customer_account_number'),
+        ('customerAccountName', 'customer_account_name'),
+    ))
 
-    class MissingParameter(ValueError):
-        pass
-
-    class InvalidSignature(ValueError):
-        pass
-
-    def __init__(self, config):
+    def __init__(self, config, data):
         self.config = config
-        self.data = OrderedDict()
         self.signature = None
+        self.data = data
+        self._parse_data(data)
 
-    def parseData(self, data):
-        for key in self.required_data:
-            if key not in data:
-                raise self.MissingParameter(key)
+    def _parse_data(self, data):
+        for api_key, attr_name in self.required_data.items():
+            if api_key not in data:
+                raise MissingParameter(api_key)
 
-            self.data[key] = data[key]
+            value = data[api_key]
+            if hasattr(self, '_clean_{}'.format(attr_name)):
+                value = getattr(self, '_clean_{}'.format(attr_name))(value)
+            setattr(self, attr_name, value)
 
-        for key in self.optional_data:
-            if key not in data:
-                self.data[key] = None
-            else:
-                self.data[key] = data[key]
-
+        for api_key, attr_name in self.optional_data.items():
+            value = data.get(api_key, None)
+            if hasattr(self, '_clean_{}'.format(attr_name)):
+                value = getattr(self, '_clean_{}'.format(attr_name))(value)
+            setattr(self, attr_name, value)
         self.signature = data.get('signature', None)
 
-    def _hashParam(self, params):
+    def _hash_param(self, params):
         # this interface is using deprecated md5 hashing
         return hashlib.md5(params).hexdigest()
 
-    def checkSignature(self):
+    def check_signature(self):
         params = OrderedDict()
 
-        params["merchantId"] = self.config.merchantId
-        params["accountId"] = self.config.accountId
+        params['merchantId'] = self.config.merchant_id
+        params['accountId'] = self.config.account_id
 
-        for key, value in self.data.items():
-            if value is None:
+        data_keys = self.required_data.keys() + self.optional_data.keys()
+        for key in data_keys:
+            if key not in self.data:
                 continue
 
-            params[key] = value
+            params[key] = self.data[key]
 
-        signed_params = self._signParams(params, self.config.password)
+        signed_params = self._sign_params(params, self.config.password)
 
         if self.signature != signed_params['signature']:
-            raise self.InvalidSignature()
+            raise InvalidSignature()
 
         return True
 
-    def getValue(self):
-        """
-        Returns the value property. If value was not specified using
-        setValue() method, None is returned.
-        """
-        return float(self.data['value'])
+    def _clean_value(self, value):
+        return Decimal(value)
 
-    def getDescription(self):
-        """
-        Returns the description property. If description was not specified
-        using setDescription() method, None is returned.
-        """
-        return self.data['description']
+    def _clean_method_id(self, value):
+        return int(value)
 
-    def getMerchantData(self):
-        """
-        Returns the merchantData property. If merchantData was not specified
-        using setMerchantData() method, None is returned.
-        """
-        return self.data['merchantData']
+    def _clean_currency(self, value):
+        return 'CZK' if value is None else value
 
-    def getMethodId(self):
-        """
-        Returns the methodId property. If methodId was not specified using
-        setMethodId() property, None is returned.
-        """
-        return int(self.data['methodId'])
-
-    def getCurrency(self):
-        """
-        Overridden to provide default value if no currency is specified in
-        the callback, so that merchant application can count with different
-        currencies right now, even when ThePay does not support multiple
-        currencies so far.
-        """
-        if self.data.get('currency', None) is None:
-            return "CZK"
-
-        return self.data['currency']
-
-    def getSignature(self):
-        """
-        Overwrites getSignature() method from TpPayment to return the valid
-        signature specified by ThePay gate, not the signature computed
-        by the class for sending the payment (mainly because sent payment
-        does not contain all fields that are used to generate returned
-        payment signature).
-        """
-        return self.signature
-
-    def getStatus(self):
-        """
-        Gets status of the payment.
-        @return int one of STATUS_* constants.
-        """
-        return int(self.data['status'])
-
-    def getPaymentId(self):
-        """
-        Gets unique ID of the payment in the ThePay system.
-        """
-        return self.data['paymentId']
-
-    def getIpRating(self):
-        """
-        Returns the IP rating of the IP that sent the payment.
-        """
-        return self.data['ipRating']
-
-    def getVariableSymbol(self):
-        """
-        Returns the variable symbol, if valid, for offline payment method.
-        """
-        return self.data['variableSymbol']
-
-    def isOfline(self):
-        """
-        @return boolean true if payment method is offline
-        """
-        return self.data['isOffline']
-
-    def getNeedConfirm(self):
-        """
-        @return boolean if payment needs additional confirmation about it's state - for online methods with additional confirmation
-        """
-        return self.data['needConfirm']
-
-    def getIsConfirm(self):
-        """
-        @return boolean if actual action is confirmation about payment state - for online methods with additional confirmation
-        """
-        return self.data['isConfirm']
-
-    def getSpecificSymbol(self):
-        """
-        @return string specific symbol from bank transaction. Used only for permanent payments.
-        """
-        return self.data['specificSymbol']
-
-    def getIsOffline(self):
-        """
-        @return if payment method is offline or online
-        """
-        return self.data['isOffline']
-
-    def getDeposit(self):
-        """
-        @return boolean  If card payment will be charged immediately or only blocked and charged later by paymentDeposit operation.
-        """
-        return self.data['deposit']
-
-    def getIsRecurring(self):
-        """
-        @return boolean If card payment is reccuring.
-        """
-        return self.data['isRecurring']
-
-    def getCustomerAccountNumber(self):
-        """
-        @return string Number of customer's account in full format including bank code.
-        """
-        return self.data['customerAccountNumber']
-
-    def getCustomerAccountName(self):
-        """
-        @return string Name of customer's account.
-        """
-        return self.data['customerAccountName']
+    def _clean_status(self, value):
+        return int(value)

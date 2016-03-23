@@ -9,8 +9,4 @@ setup(
     author='cuchac',
     author_email='cuchac@email.cz',
     description='ThePay API library',
-    install_requires=(
-        'suds_jurko',
-        'six',
-    )
 )
