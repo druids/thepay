@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='thepay',
-    version='0.2',
+    version='0.3',
     packages=['thepay'],
     url='https://github.com/cuchac/thepay',
     license='LGPL',
