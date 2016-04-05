@@ -49,10 +49,13 @@ class DataApi(SignatureMixin):
     def _format_datetime(self, value):
         return value.replace(microsecond=0).isoformat()
 
-    def get_payments(self, value_from=None, value_to=None, created_on_from=None, created_on_to=None,
+    def get_payments(self, account_ids=None, value_from=None, value_to=None, created_on_from=None, created_on_to=None,
                      finished_on_from=None, finished_on_to=None, page=None):
 
         search_params = OrderedDict()
+
+        if account_ids is not None:
+            search_params['accountId'] = account_ids
 
         if value_from is not None:
             search_params['valueFrom'] = value_from
@@ -83,4 +86,11 @@ class DataApi(SignatureMixin):
             params['pagination'] = {'page': page}
         params['ordering'] = {'orderHow': 'ASC'}
 
-        return self.client.service.getPayments(**self._sign_params(params, self.config.data_api_password))
+        signed_params = self._sign_params(params, self.config.data_api_password)
+
+        if params.get('searchParams', {}).get('accountId'):
+            account_id_array = self.client.factory.create('idArray')
+            account_id_array.id = params['searchParams']['accountId']
+            params['searchParams']['accountId'] = account_id_array
+
+        return self.client.service.getPayments(**signed_params)

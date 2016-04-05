@@ -48,6 +48,7 @@ class DataApiTests(unittest.TestCase):
                                    created_on_to=datetime.now(timezone('UTC'))).pagination
         self.data_api.get_payments(finished_on_from=datetime.now(timezone('UTC')),
                                    finished_on_to=datetime.now(timezone('UTC'))).pagination
+        self.data_api.get_payments(account_ids=[1]).pagination
 
 
 class PaymentTests(unittest.TestCase):
