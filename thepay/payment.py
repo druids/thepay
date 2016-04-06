@@ -142,7 +142,7 @@ class ReturnPayment(SignatureMixin):
         params['merchantId'] = self.config.merchant_id
         params['accountId'] = self.config.account_id
 
-        data_keys = self.required_data.keys() + self.optional_data.keys()
+        data_keys = list(self.required_data.keys()) + list(self.optional_data.keys())
         for key in data_keys:
             if key not in self.data:
                 continue

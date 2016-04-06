@@ -9,7 +9,7 @@ class SignatureMixin(object):
         results = []
         for key, val in params.items():
             if isinstance(val, dict):
-                val = self._hash_param(self._build_query(val))
+                val = self._hash_param(self._build_query(val).encode('utf-8'))
             elif isinstance(val, (list, tuple)):
                 val = '|'.join(map(six.text_type, val))
             else:

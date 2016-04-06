@@ -20,7 +20,7 @@ class DataApiTests(unittest.TestCase):
         self.data_api = DataApi(self.config)
 
     def test_methods(self):
-        self.assertEqual(self.data_api.get_payment_methods()[0].name, 'MojePlatba')
+        self.assertEqual(self.data_api.get_payment_methods()[0].name, 'Platba kartou')
 
     def test_payment_statue(self):
         self.assertEqual(self.data_api.get_payment_state(1), 2)
@@ -48,6 +48,7 @@ class DataApiTests(unittest.TestCase):
                                    created_on_to=datetime.now(timezone('UTC'))).pagination
         self.data_api.get_payments(finished_on_from=datetime.now(timezone('UTC')),
                                    finished_on_to=datetime.now(timezone('UTC'))).pagination
+        self.data_api.get_payments(account_ids=[1]).pagination
 
 
 class PaymentTests(unittest.TestCase):
