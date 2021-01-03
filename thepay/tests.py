@@ -1,35 +1,41 @@
-from __future__ import print_function
-
 from datetime import datetime, date
 
 from pytz import timezone
+
+from urllib.parse import parse_qs
 
 import unittest
 
 from thepay.config import Config
 from thepay.data_api import DataApi
 from thepay.payment import Payment, ReturnPayment
-from six.moves import urllib
 from decimal import Decimal
 
 
 class DataApiTests(unittest.TestCase):
+
     def setUp(self):
         super(DataApiTests, self).setUp()
         self.config = Config()
         self.data_api = DataApi(self.config)
 
     def test_methods(self):
-        self.assertEqual(self.data_api.get_payment_methods()[0].name, 'Platba kartou')
+        self.assertEqual(self.data_api.get_payment_methods()[0].name, 'Platba24')
 
     def test_payment_statue(self):
-        self.assertEqual(self.data_api.get_payment_state(1), 2)
+        id = self.data_api.get_payments().payments.payment[0].id
+        self.assertEqual(self.data_api.get_payment_state(id), 1)
 
     def test_payment(self):
-        self.assertEqual(self.data_api.get_payment(1).id, '1')
+        id = self.data_api.get_payments().payments.payment[0].id
+        self.assertEqual(
+            self.data_api.get_payment(id).id,
+            id
+        )
 
     def test_payment_info(self):
-        self.data_api.get_payment_instructions(1)
+        id = self.data_api.get_payments().payments.payment[0].id
+        self.data_api.get_payment_instructions(id)
 
     def test_credentials(self):
         self.config.set_credentials(42, 43, 'test', 'test2')
@@ -52,6 +58,7 @@ class DataApiTests(unittest.TestCase):
 
 
 class PaymentTests(unittest.TestCase):
+
     def setUp(self):
         self.config = Config()
         self.payment = Payment(self.config)
@@ -85,12 +92,13 @@ class PaymentTests(unittest.TestCase):
 
 
 class ReturnPaymentTests(unittest.TestCase):
+
     def setUp(self):
         self.config = Config()
 
     def test_data(self):
         params_str = 'merchantId=1&accountId=1&value=123.00&currency=CZK&methodId=1&description=Order+123+payment&merchantData=Order+123&status=2&paymentId=34886&ipRating=&isOffline=0&needConfirm=0&signature=f38ff15cc17752a6d4035044a93deb06'
-        params = urllib.parse.parse_qs(params_str, keep_blank_values=True)
+        params = parse_qs(params_str, keep_blank_values=True)
         params = {key: value[0] for key, value in params.items()}
 
         payment = ReturnPayment(self.config, params)

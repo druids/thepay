@@ -1,4 +1,4 @@
-class Config(object):
+class Config:
 
     # ThePay API
     gate_url = 'https://www.thepay.cz/demo-gate/'
