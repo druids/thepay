@@ -1,9 +1,8 @@
 import hashlib
-import six
 from collections import OrderedDict
 
 
-class SignatureMixin(object):
+class SignatureMixin:
 
     def _build_query(self, params):
         results = []
@@ -11,10 +10,10 @@ class SignatureMixin(object):
             if isinstance(val, dict):
                 val = self._hash_param(self._build_query(val).encode('utf-8'))
             elif isinstance(val, (list, tuple)):
-                val = '|'.join(map(six.text_type, val))
+                val = '|'.join(map(str, val))
             else:
-                val = six.text_type(val)
-            results.append('='.join((six.text_type(key), val)))
+                val = str(val)
+            results.append('='.join((str(key), val)))
         return '&'.join(results)
 
     def _sign_params(self, params, password):

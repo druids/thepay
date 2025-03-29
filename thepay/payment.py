@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import hashlib
-from six.moves import urllib
+from urllib.parse import urlencode
+
 from decimal import Decimal
 from thepay.utils import SignatureMixin
 from thepay.exceptions import InvalidSignature, MissingParameter
@@ -82,7 +83,7 @@ class Payment(SignatureMixin):
         :return: url-encoded string
         """
         params = self._sign_params(self.get_params(), self.config.password)
-        return "{}?{}".format(self.config.gate_url, urllib.parse.urlencode(params))
+        return "{}?{}".format(self.config.gate_url, urlencode(params))
 
 
 class ReturnPayment(SignatureMixin):

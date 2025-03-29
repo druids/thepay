@@ -1,10 +1,11 @@
 from collections import OrderedDict
-import suds.client
+from zeep import Client, Transport
 
 from thepay.utils import SignatureMixin
 
 
 class DataApi(SignatureMixin):
+
     def __init__(self, config):
         """
 
@@ -16,21 +17,24 @@ class DataApi(SignatureMixin):
         self.connect()
 
     def connect(self):
-        self.client = suds.client.Client(self.config.data_web_services_wsdl)
+        self.client = Client(self.config.data_web_services_wsdl, transport=self._get_transport())
+
+    def _get_transport(self):
+        return Transport()
 
     def get_payment_methods(self):
         params = self._sign_params(OrderedDict((
             ('merchantId', self.config.merchant_id),
             ('accountId', self.config.account_id),
         )), self.config.data_api_password)
-        return self.client.service.getPaymentMethods(**params).methods[0]
+        return self.client.service.getPaymentMethods(**params).methods.method
 
     def get_payment_state(self, payment_id):
         params = self._sign_params(OrderedDict((
             ('merchantId', self.config.merchant_id),
             ('paymentId', payment_id),
         )), self.config.data_api_password)
-        return int(self.client.service.getPaymentState(**params).state)
+        return self.client.service.getPaymentState(**params).state
 
     def get_payment(self, payment_id):
         params = self._sign_params(OrderedDict((
@@ -88,9 +92,10 @@ class DataApi(SignatureMixin):
 
         signed_params = self._sign_params(params, self.config.data_api_password)
 
+        factory = self.client.type_factory('ns0')
+
         if params.get('searchParams', {}).get('accountId'):
-            account_id_array = self.client.factory.create('idArray')
-            account_id_array.id = params['searchParams']['accountId']
+            account_id_array = factory.idArray(id=params['searchParams']['accountId'])
             params['searchParams']['accountId'] = account_id_array
 
         return self.client.service.getPayments(**signed_params)
